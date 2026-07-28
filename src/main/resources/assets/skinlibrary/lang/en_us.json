@@ -1,0 +1,20 @@
+{
+  "msg.header": "✦ Skins — page {0}/{1}  ({2})",
+  "msg.applied": "Skin \"{0}\" applied!",
+  "msg.applied_url": "Skin applied from URL!",
+  "msg.reset": "Your original account skin is back.",
+  "msg.reloaded": "Skin library reloaded — {0} entries.",
+  "msg.unknown_skin": "No skin called \"{0}\". Try /skin list.",
+  "msg.empty_library": "The skin library is empty. Drop some .png files into config/skinlibrary/skins/",
+  "msg.no_skins_by": "\"{0}\" has no skins here.",
+  "msg.fetch_failed": "Could not fetch that skin. Try again in a moment.",
+  "msg.no_tailor": "Cannot change skins — is FabricTailor installed?",
+  "msg.players_only": "Only a player can use this command.",
+  "msg.cooldown": "Please wait {0} s before changing your skin again.",
+  "msg.bad_url": "That does not look like a http(s) address.",
+  "msg.click_to_wear": "Click to wear: {0}",
+  "msg.prev": "◀ Previous",
+  "msg.next": "Next ▶",
+  "msg.random": "🎲 Random",
+  "msg.own_skin": "↺ My own skin"
+}

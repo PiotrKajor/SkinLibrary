@@ -1,0 +1,20 @@
+{
+  "msg.header": "✦ Skiny — strona {0}/{1}  ({2})",
+  "msg.applied": "Założono skin \"{0}\"!",
+  "msg.applied_url": "Założono skin z adresu URL!",
+  "msg.reset": "Przywrócono Twój oryginalny skin konta.",
+  "msg.reloaded": "Przeładowano bibliotekę skinów — {0} pozycji.",
+  "msg.unknown_skin": "Nie znaleziono skina \"{0}\". Użyj /skin list.",
+  "msg.empty_library": "Biblioteka skinów jest pusta. Wrzuć pliki .png do config/skinlibrary/skins/",
+  "msg.no_skins_by": "Gracz \"{0}\" nie ma tu żadnych skinów.",
+  "msg.fetch_failed": "Nie udało się pobrać tego skina. Spróbuj za chwilę.",
+  "msg.no_tailor": "Nie można zmienić skina — czy FabricTailor jest zainstalowany?",
+  "msg.players_only": "Tej komendy może użyć tylko gracz.",
+  "msg.cooldown": "Odczekaj {0} s przed kolejną zmianą skina.",
+  "msg.bad_url": "To nie wygląda na adres http(s).",
+  "msg.click_to_wear": "Kliknij, aby założyć: {0}",
+  "msg.prev": "◀ Poprzednia",
+  "msg.next": "Następna ▶",
+  "msg.random": "🎲 Losowy",
+  "msg.own_skin": "↺ Mój skin"
+}

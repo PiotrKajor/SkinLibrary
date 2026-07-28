@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "skinlibrary",
+  "version": "${version}",
+  "name": "SkinLibrary",
+  "description": "Server-side skin library with an in-chat browser: drop PNG files in a folder and let players pick skins with /skin. Built on FabricTailor.",
+  "authors": ["Piotr Kajor"],
+  "contact": {
+    "homepage": "https://github.com/PiotrKajor/skinlibrary",
+    "sources": "https://github.com/PiotrKajor/skinlibrary",
+    "issues": "https://github.com/PiotrKajor/skinlibrary/issues"
+  },
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["dev.kajor.skinlibrary.SkinLibrary"]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": ">=1.21",
+    "java": ">=21",
+    "fabric-api": "*",
+    "fabrictailor": "*"
+  }
+}
