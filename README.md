@@ -20,7 +20,7 @@ No web service to host, no API keys, no client-side mod.
 | `/skin reload` | Reload the library (operators) |
 
 [FabricTailor](https://modrinth.com/mod/fabrictailor) does the actual skin swapping and the
-MineSkin upload; SkinLibrary adds the library, the browser and the sharing on top of it.
+MineSkin upload; SkinLibrary adds the curated library and the in-chat browser on top of it.
 
 ## Install
 
@@ -92,7 +92,8 @@ and everything else works unchanged.
 ## Building
 
 ```bash
-./gradlew build     # needs Java 21
+./gradlew build              # needs Java 21
+python3 tools/check_lang.py  # message keys match across languages
 ```
 
 The jar lands in `build/libs/`.

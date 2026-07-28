@@ -17,10 +17,10 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
@@ -42,7 +42,9 @@ public final class Library {
 
     private final Path katalog;
     private final Config cfg;
-    private final Map<String, Wpis> cache = new HashMap<>();
+    // Czytany i zapisywany z wątków pobocznych (każde /skin pobiera teksturę we własnym),
+    // więc zwykła HashMap mogłaby się rozjechać przy równoczesnych zmianach skina.
+    private final Map<String, Wpis> cache = new ConcurrentHashMap<>();
     private volatile List<Entry> wpisy = List.of();
 
     /** Zapamiętana tekstura wraz ze znacznikiem, po którym poznamy, że jest nieaktualna. */
@@ -182,9 +184,7 @@ public final class Library {
         };
 
         tekstura.ifPresent(t -> {
-            synchronized (cache) {
-                cache.put(klucz(wpis), new Wpis(t.value(), t.signature(), stempel));
-            }
+            cache.put(klucz(wpis), new Wpis(t.value(), t.signature(), stempel));
             zapiszCache();
         });
         return tekstura;
@@ -228,15 +228,13 @@ public final class Library {
         Path plik = katalog.resolve("cache.json");
         try {
             JsonObject root = new JsonObject();
-            synchronized (cache) {
-                cache.forEach((k, w) -> {
-                    JsonObject o = new JsonObject();
-                    o.addProperty("value", w.value());
-                    if (w.signature() != null) o.addProperty("signature", w.signature());
-                    o.addProperty("stamp", w.stempel());
-                    root.add(k, o);
-                });
-            }
+            cache.forEach((k, w) -> {
+                JsonObject o = new JsonObject();
+                o.addProperty("value", w.value());
+                if (w.signature() != null) o.addProperty("signature", w.signature());
+                o.addProperty("stamp", w.stempel());
+                root.add(k, o);
+            });
             Files.writeString(plik, GSON.toJson(root), StandardCharsets.UTF_8);
         } catch (Exception e) {
             SkinLibrary.LOG.warn("Nie mogę zapisać cache.json: {}", e.toString());
