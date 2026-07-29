@@ -144,16 +144,23 @@ python3 tools/check_lang.py  # klucze komunikatów zgodne we wszystkich językac
 
 Jar ląduje w `build/libs/`.
 
-## Zgłaszanie błędów
+## 🐞 Coś nie działa?
 
-Błędy i propozycje zbieramy w [zakładce Issues](https://github.com/PiotrKajor/SkinLibrary/issues).
-Formularz zgłoszenia sam pyta o to, co potrzebne: wersję moda, wersję Minecrafta, loader
-i fragment logu.
+<div align="center">
 
-Do zgłoszenia dołącz **`logs/latest.log` z serwera** — bez niego zwykle nie da się nic
-ustalić. Gdy serwer się wywalił, dorzuć też plik z `crash-reports/`. Jeśli komenda kończy
-się komunikatem „An unexpected error occurred", ślad po niej jest właśnie w logu serwera,
-a nie na czacie.
+[![Zgłoś błąd](https://img.shields.io/badge/Zg%C5%82o%C5%9B%20b%C5%82%C4%85d-otw%C3%B3rz%20zg%C5%82oszenie-d73a4a?style=for-the-badge&logo=github&logoColor=white)](https://github.com/PiotrKajor/SkinLibrary/issues/new?template=bug_report.yml)
+
+**Każde zgłoszenie czytam.** Formularz sam pyta o wersję moda, wersję Minecrafta i loader —
+wystarczy wypełnić.
+
+</div>
+
+> [!IMPORTANT]
+> Dołącz **`logs/latest.log` z serwera**. Bez niego zwykle nie da się nic ustalić.
+> Gdy serwer się wywalił, dorzuć też plik z `crash-reports/`.
+>
+> Komenda kończy się komunikatem „An unexpected error occurred"? Ślad po niej jest
+> **w logu serwera, nie na czacie** — na czacie widać tylko, że coś poszło źle.
 
 ## Licencja
 

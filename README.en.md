@@ -143,15 +143,23 @@ python3 tools/check_lang.py  # message keys match across languages
 
 The jar lands in `build/libs/`.
 
-## Reporting bugs
+## 🐞 Something broken?
 
-Bugs and suggestions go to the [issue tracker](https://github.com/PiotrKajor/SkinLibrary/issues).
-The report form asks for what is needed: mod version, Minecraft version, loader and a slice
-of the log.
+<div align="center">
 
-Attach **the server's `logs/latest.log`** — without it a report is usually impossible to act
-on. If the server went down, add the file from `crash-reports/` too. When a command ends with
-"An unexpected error occurred", the trace is in the server log, not in chat.
+[![Report a bug](https://img.shields.io/badge/Report%20a%20bug-open%20an%20issue-d73a4a?style=for-the-badge&logo=github&logoColor=white)](https://github.com/PiotrKajor/SkinLibrary/issues/new?template=bug_report.yml)
+
+**Every report gets read.** The form asks for the mod version, Minecraft version and loader —
+just fill it in.
+
+</div>
+
+> [!IMPORTANT]
+> Attach **the server's `logs/latest.log`**. Without it a report is usually impossible to act on.
+> If the server went down, add the file from `crash-reports/` too.
+>
+> Does the command end with "An unexpected error occurred"? The trace is **in the server log,
+> not in chat** — chat only tells you that something went wrong.
 
 ## License
 
