@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -110,8 +111,19 @@ public final class SkinCommand {
         return Component.literal(Lang.get(klucz, args)).withStyle(kolor);
     }
 
+    /**
+     * Wiadomość na czat gracza — zawsze przez {@link CommandSource}, nigdy przez ServerPlayer.
+     *
+     * <p>ServerPlayer dostał własne {@code sendSystemMessage} dopiero w 1.21.9. Jeden jar na całe
+     * 1.21+ nie może się o nie zaczepić: na 1.21–1.21.8 to NoSuchMethodError w środku komendy.
+     * Metoda interfejsu jest w całym zakresie ta sama.
+     */
+    private static void wyslij(ServerPlayer gracz, Component tresc) {
+        ((CommandSource) gracz).sendSystemMessage(tresc);
+    }
+
     private static void powiedz(MinecraftServer server, ServerPlayer gracz, MutableComponent tresc) {
-        server.execute(() -> gracz.sendSystemMessage(tresc));
+        server.execute(() -> wyslij(gracz, tresc));
     }
 
     /** Czy gracz nie zmienia skina za często. Zwraca 0, gdy wolno, albo pozostałe sekundy. */
@@ -130,7 +142,7 @@ public final class SkinCommand {
                              String kluczSukcesu, Object... args) {
         long zostalo = odczekaj(gracz);
         if (zostalo > 0) {
-            gracz.sendSystemMessage(tekst("msg.cooldown", ChatFormatting.YELLOW, zostalo));
+            wyslij(gracz, tekst("msg.cooldown", ChatFormatting.YELLOW, zostalo));
             return;
         }
         ostatniaZmiana.put(gracz.getUUID(), System.currentTimeMillis());
@@ -150,7 +162,7 @@ public final class SkinCommand {
                 return;
             }
             final Tailor.Texture t = tekstura.get();
-            server.execute(() -> gracz.sendSystemMessage(Tailor.apply(gracz, t)
+            server.execute(() -> wyslij(gracz, Tailor.apply(gracz, t)
                     ? tekst(kluczSukcesu, ChatFormatting.GREEN, args)
                     : tekst("msg.no_tailor", ChatFormatting.RED)));
         }, "skinlibrary-apply").start();
@@ -163,7 +175,7 @@ public final class SkinCommand {
         if (gracz == null) return 0;
         Optional<Library.Entry> wpis = SkinLibrary.library().find(nazwa);
         if (wpis.isEmpty()) {
-            gracz.sendSystemMessage(tekst("msg.unknown_skin", ChatFormatting.RED, nazwa));
+            wyslij(gracz, tekst("msg.unknown_skin", ChatFormatting.RED, nazwa));
             return 0;
         }
         zaloz(gracz, ctx.getSource().getServer(),
@@ -182,7 +194,7 @@ public final class SkinCommand {
         ServerPlayer gracz = gracz(ctx);
         if (gracz == null) return 0;
         if (!adres.startsWith("http://") && !adres.startsWith("https://")) {
-            gracz.sendSystemMessage(tekst("msg.bad_url", ChatFormatting.RED));
+            wyslij(gracz, tekst("msg.bad_url", ChatFormatting.RED));
             return 0;
         }
         zaloz(gracz, ctx.getSource().getServer(),
@@ -195,7 +207,7 @@ public final class SkinCommand {
         if (gracz == null) return 0;
         List<Library.Entry> wszystkie = SkinLibrary.library().entries();
         if (wszystkie.isEmpty()) {
-            gracz.sendSystemMessage(tekst("msg.empty_library", ChatFormatting.GRAY));
+            wyslij(gracz, tekst("msg.empty_library", ChatFormatting.GRAY));
             return 0;
         }
         Library.Entry wpis = wszystkie.get(ThreadLocalRandom.current().nextInt(wszystkie.size()));
@@ -208,8 +220,11 @@ public final class SkinCommand {
         ServerPlayer gracz = gracz(ctx);
         if (gracz == null) return 0;
         // Skin własnego konta bierzemy po nicku — ta sama droga, co /skin player.
+        // Nick ze źródła komendy, nie z GameProfile: authlib bywa rekordem (name()) albo klasą
+        // (getName()) zależnie od wydania, a to samo jedno API dla całego 1.21+ nie istnieje.
+        String nick = ctx.getSource().getTextName();
         zaloz(gracz, ctx.getSource().getServer(),
-                () -> Tailor.fromPlayerName(gracz.getGameProfile().getName()), "msg.reset");
+                () -> Tailor.fromPlayerName(nick), "msg.reset");
         return 1;
     }
 
@@ -231,7 +246,7 @@ public final class SkinCommand {
             if (autor == null || e.author().equalsIgnoreCase(autor)) wybrane.add(e);
         }
         if (wybrane.isEmpty()) {
-            gracz.sendSystemMessage(tekst(autor != null ? "msg.no_skins_by" : "msg.empty_library",
+            wyslij(gracz, tekst(autor != null ? "msg.no_skins_by" : "msg.empty_library",
                     ChatFormatting.GRAY, autor));
             return 0;
         }
@@ -242,7 +257,7 @@ public final class SkinCommand {
         int od = (p - 1) * rozmiar;
         int doo = Math.min(od + rozmiar, wybrane.size());
 
-        gracz.sendSystemMessage(Component.literal(
+        wyslij(gracz, Component.literal(
                         Lang.get("msg.header", p, stron, wybrane.size()))
                 .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
 
@@ -251,9 +266,9 @@ public final class SkinCommand {
             Library.Entry e = wybrane.get(i);
             if (autor == null && !e.author().equals(poprzedniAutor)) {
                 poprzedniAutor = e.author();
-                gracz.sendSystemMessage(Component.literal("» " + poprzedniAutor).withStyle(ChatFormatting.YELLOW));
+                wyslij(gracz, Component.literal("» " + poprzedniAutor).withStyle(ChatFormatting.YELLOW));
             }
-            gracz.sendSystemMessage(Component.literal("   ▸ " + e.name()).withStyle(st -> {
+            wyslij(gracz, Component.literal("   ▸ " + e.name()).withStyle(st -> {
                 Style s = st.withColor(ChatFormatting.GREEN);
                 s = ChatCompat.runCommand(s, "/" + SkinLibrary.config().commandAliases[0] + " " + e.name());
                 return ChatCompat.showText(s, Component.literal(Lang.get("msg.click_to_wear", e.name())));
@@ -264,10 +279,10 @@ public final class SkinCommand {
         if (p > 1) nawigacja.append(przycisk(Lang.get("msg.prev"), komendaListy(autor, p - 1)));
         if (p > 1 && p < stron) nawigacja.append(Component.literal("    "));
         if (p < stron) nawigacja.append(przycisk(Lang.get("msg.next"), komendaListy(autor, p + 1)));
-        if (p > 1 || p < stron) gracz.sendSystemMessage(nawigacja);
+        if (p > 1 || p < stron) wyslij(gracz, nawigacja);
 
         String alias = "/" + SkinLibrary.config().commandAliases[0];
-        gracz.sendSystemMessage(Component.empty()
+        wyslij(gracz, Component.empty()
                 .append(przycisk(Lang.get("msg.random"), alias + " random"))
                 .append(Component.literal("  "))
                 .append(przycisk(Lang.get("msg.own_skin"), alias + " reset")));
