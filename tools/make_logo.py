@@ -29,8 +29,13 @@ MS_SKIN = 850                     # ile trzyma się jeden skin
 MS_BLYSK = 70                     # błysk w momencie podmiany
 
 
-def rendery() -> list[Image.Image]:
-    """Rendery przycięte do wspólnego kadru, z sylwetką „bez skina" na początku."""
+def rendery() -> tuple[list[Image.Image], Image.Image, Image.Image]:
+    """Skiny do rotacji plus dwie sylwetki „bez skina": ze znakiem na głowie i na torsie.
+
+    To dwa warianty tego samego stanu, więc nigdy nie lecą w jednej animacji. Ikona bierze
+    tę ze znakiem na głowie — w kadrze na popiersie tylko ona jest czytelna. Banner bierze
+    tę ze znakiem na torsie, bo pokazuje całą sylwetkę i tam znak widać bez problemu.
+    """
     pliki = sorted(p for p in ZRODLA.glob("*.png"))
     if not pliki:
         sys.exit(f"BŁĄD: brak plików PNG w {ZRODLA}")
@@ -45,13 +50,23 @@ def rendery() -> list[Image.Image]:
     def barwy(im):
         return len({p[:3] for p in im.getdata() if p[3] > 200})
 
-    # Klatka otwierająca: plik nazwany „start", a gdy go nie ma — ten o najmniejszej liczbie
-    # barw, czyli czarna sylwetka „bez skina". Sama liczba kolorów nie wystarcza, bo wygładzone
-    # krawędzie znaku zapytania potrafią dać ich kilkaset.
+    # Sylwetkę ze znakiem na głowie poznajemy po nazwie pliku („start"), bo wygładzone
+    # krawędzie znaku dają jej kilkaset barw. Tę ze znakiem na torsie — po tym, że barw ma
+    # kilka: cała jest jednolicie czarna.
     nazwane = [p for p in pliki if p.stem.lower().startswith("start")]
-    pierwszy = nazwane[0] if nazwane else min(obrazy, key=lambda p: barwy(obrazy[p]))
-    kolejnosc = [pierwszy] + [p for p in pliki if p != pierwszy]
-    return [obrazy[p].crop(kadr) for p in kolejnosc]
+    glowa = nazwane[0] if nazwane else None
+    plaskie = [p for p in pliki if p != glowa and barwy(obrazy[p]) < 5]
+    tors = min(plaskie, key=lambda p: barwy(obrazy[p])) if plaskie else None
+    if glowa is None:
+        glowa = tors
+    if tors is None:
+        tors = glowa
+    if glowa is None:
+        sys.exit(f"BŁĄD: w {ZRODLA} nie ma żadnej sylwetki „bez skina\"")
+
+    skiny = [p for p in pliki if p not in (glowa, tors)]
+    przytnij = lambda p: obrazy[p].crop(kadr)
+    return [przytnij(p) for p in skiny], przytnij(glowa), przytnij(tors)
 
 
 def tlo(szer: int, wys: int, reflektor=None, cien_y: int = 0) -> Image.Image:
@@ -92,11 +107,6 @@ def popiersie(render: Image.Image) -> Image.Image:
     bok = int(render.height * 0.52)
     lewo = (render.width - bok) // 2
     return render.crop((lewo, 0, lewo + bok, bok))
-
-
-def pusty_kadr(kadr: Image.Image) -> bool:
-    """Czy w kadrze nie widać nic poza jednolitą sylwetką (mniej niż 5 barw)."""
-    return len({p[:3] for p in kadr.getdata() if p[3] > 200}) < 5
 
 
 def postac(render: Image.Image, wysokosc: int) -> Image.Image:
@@ -153,13 +163,11 @@ def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int],
           f"{len(obrazy)} klatek, {sciezka.stat().st_size // 1024} KB")
 
 
-def logo(warstwy_zrodlowe: list[Image.Image]) -> None:
+def logo(skiny: list[Image.Image], sylwetka: Image.Image) -> None:
     # 384 px i 128 kolorów, bo ikona projektu na Modrincie musi zmieścić się w 256 KiB
     # (i tak wyświetla się w kilkudziesięciu pikselach).
     bok = 384
-    # Druga sylwetka bez skina ma znak zapytania na klatce piersiowej, więc w kadrze na
-    # popiersie zostaje z niej sam czarny prostokąt. Rolę „bez skina" pełni klatka startowa.
-    kadry = [popiersie(r) for r in warstwy_zrodlowe if not pusty_kadr(popiersie(r))]
+    kadry = [popiersie(r) for r in [sylwetka] + skiny]
     wysokosc = int(bok * 0.92)
     warstwy = [postac(k, wysokosc) for k in kadry]
     # Bez snopa i bez cienia: przy takim zbliżeniu popiersie samo wypełnia kadr.
@@ -172,10 +180,10 @@ def logo(warstwy_zrodlowe: list[Image.Image]) -> None:
     print(f"  docs/media/logo.png  {(WYNIK / 'logo.png').stat().st_size // 1024} KB")
 
 
-def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
+def hero(skiny: list[Image.Image], sylwetka: Image.Image) -> None:
     szer, wys = 1280, 640
     wysokosc = int(wys * 0.80)
-    warstwy = [postac(r, wysokosc) for r in warstwy_zrodlowe]
+    warstwy = [postac(r, wysokosc) for r in [sylwetka] + skiny]
     lewa = int(szer * 0.23)
     stopy = int(wys * 0.94)
     # Bez snopa: przy jednej palecie na cały GIF miękki gradient rozkłada się na kilkanaście
@@ -248,10 +256,10 @@ def poradnik() -> None:
 
 def main() -> None:
     WYNIK.mkdir(parents=True, exist_ok=True)
-    zrodla = rendery()
-    print(f"{len(zrodla)} renderów z {ZRODLA}")
-    logo(zrodla)
-    hero(zrodla)
+    skiny, sylwetka_glowa, sylwetka_tors = rendery()
+    print(f"{len(skiny)} skinów z {ZRODLA} + dwie sylwetki bez skina")
+    logo(skiny, sylwetka_glowa)
+    hero(skiny, sylwetka_tors)
     poradnik()
 
 
