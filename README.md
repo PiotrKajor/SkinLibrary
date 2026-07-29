@@ -15,8 +15,7 @@ Nic do zainstalowania po stronie gracza, żadnego własnego serwisu WWW ani kluc
 &nbsp;
 ![Licencja](https://img.shields.io/badge/licencja-MIT-3ddc84?style=for-the-badge)
 
-<!-- Miejsce na główny obrazek/GIF: wrzuć plik do docs/media/ i odkomentuj linię poniżej. -->
-<!-- <img src="docs/media/hero.gif" alt="Lista skinów na czacie Minecrafta" width="720"> -->
+<img src="docs/media/hero.gif" alt="SkinLibrary — postać przewija się przez skiny z biblioteki" width="720">
 
 </div>
 

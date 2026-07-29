@@ -15,8 +15,7 @@ Nothing to install on their side, no web service to host, no API keys.
 &nbsp;
 ![License](https://img.shields.io/badge/license-MIT-3ddc84?style=for-the-badge)
 
-<!-- Hero image/GIF slot: drop the file into docs/media/ and uncomment the line below. -->
-<!-- <img src="docs/media/hero.gif" alt="Skin list in Minecraft chat" width="720"> -->
+<img src="docs/media/hero.gif" alt="SkinLibrary — one character cycling through library skins" width="720">
 
 </div>
 
