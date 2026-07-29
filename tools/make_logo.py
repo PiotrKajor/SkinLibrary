@@ -10,7 +10,10 @@ Użycie:  python3 tools/make_logo.py [katalog_z_renderami]
 Wynik:   docs/media/logo.gif (kwadrat, ikona projektu), logo.png (pierwsza klatka),
          docs/media/hero.gif (szeroka, do galerii)
 """
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -215,35 +218,38 @@ def hero(skiny: list[Image.Image], sylwetka: Image.Image) -> None:
 
 
 def poradnik() -> None:
-    """Nagranie z gry → docs/media/browser.gif, w rozmiarze do przyjęcia dla galerii.
+    """Nagranie z gry → docs/media/browser.gif.
 
-    Surowe nagranie ma 50 klatek na sekundę i 7 MB; do pokazania listy skinów wystarczy
-    połowa tego i węższy kadr. Tu wspólna paleta jest lepsza niż lokalna (odwrotnie niż
-    w logo): scena jest cały czas ta sama, więc jedna paleta wychodzi mniejsza.
+    Źródłem jest .mp4 (33 s, 2558×1440), nie dołączony do niego GIF — tamten urywał się,
+    zanim skin zdążył się zmienić, czyli przed jedyną rzeczą, którą to nagranie ma pokazać.
+
+    Całość w GIF-ie się nie mieści: galeria Modrintha przyjmuje 5 MiB, a 33 s w czytelnej
+    skali to kilkanaście. Stąd trzy zabiegi. Bierzemy fragment z pełnym cyklem (lista →
+    kliknięcie → założony skin). Kadr przycinamy do czatu i postaci, zamiast skalować całą
+    scenę — przy tym samym rozmiarze pliku tekst wychodzi o jedną trzecią większy. Paletę
+    składamy sami, bo palettegen z ffmpeg gubi biel tekstu (88 pikseli wobec 526 tutaj).
     """
-    nagrania = sorted(ZRODLA.glob("*/*.gif"))
-    if not nagrania:
-        print("  (brak nagrania z gry — pomijam browser.gif)")
+    nagrania = sorted(ZRODLA.glob("*/*.mp4"))
+    if not nagrania or not shutil.which("ffmpeg"):
+        print("  (brak nagrania .mp4 albo ffmpeg — pomijam browser.gif)")
         return
 
-    zrodlo = Image.open(nagrania[0])
-    szerokosc = 960
-    klatki_wy, czasy = [], []
-    for i in range(zrodlo.n_frames):
-        if i % 2:                       # co druga klatka: 50 fps → 25 fps
-            continue
-        zrodlo.seek(i)
-        k = zrodlo.convert("RGB")
-        klatki_wy.append(k.resize((szerokosc, round(k.height * szerokosc / k.width)),
-                                  Image.LANCZOS))
-        czasy.append(2 * zrodlo.info.get("duration", 40))
+    OD, ILE, FPS, SZEROKOSC = 2, 10, 8, 660     # sekundy, sekundy, klatki/s, piksele
+    KADR = "crop=1700:1040:0:400"               # czat w lewym dolnym rogu + postać
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run(
+            ["ffmpeg", "-v", "error", "-ss", str(OD), "-t", str(ILE), "-i", str(nagrania[0]),
+             "-vf", f"{KADR},fps={FPS},scale={SZEROKOSC}:-1:flags=lanczos",
+             "-y", f"{tmp}/k%03d.png"], check=True)
+        klatki_wy = [Image.open(f).convert("RGB") for f in sorted(Path(tmp).glob("*.png"))]
 
-    pasek = Image.new("RGB", (szerokosc, klatki_wy[0].height * len(klatki_wy)))
+    pasek = Image.new("RGB", (klatki_wy[0].width, klatki_wy[0].height * len(klatki_wy)))
     for i, k in enumerate(klatki_wy):
         pasek.paste(k, (0, i * klatki_wy[0].height))
+
     # Paleta liczona gęstościowo (MEDIANCUT) dobrze oddaje trawę i ziemię, ale gubi biel
-    # tekstu czatu: jasnych pikseli jest w kadrze mało, więc przepadały w podziale i tekst
-    # schodził do zielonkawej szarości. MAXCOVERAGE ratuje tekst, lecz odbiera odcienie tłu.
+    # tekstu czatu: jasnych pikseli jest w kadrze mało, więc przepadają w podziale i tekst
+    # schodzi do zielonkawej szarości. MAXCOVERAGE ratuje tekst, lecz odbiera odcienie tłu.
     # Stąd jedno i drugie: baza z MEDIANCUT plus dopisane wprost najjaśniejsze barwy nagrania.
     JASNYCH = 40
     baza = pasek.quantize(colors=200 - JASNYCH, method=Image.MEDIANCUT)
@@ -257,13 +263,15 @@ def poradnik() -> None:
 
     w_palecie = [k.quantize(palette=paleta, dither=Image.NONE) for k in klatki_wy]
     for k in w_palecie:
-        # Nagranie niesie ze sobą wpis o przezroczystości; po kwantyzacji wskazuje on
-        # na krotkę zamiast indeksu i zapis GIF-a się o to wywraca.
+        # Klatki niosą wpis o przezroczystości; po kwantyzacji wskazuje on na krotkę
+        # zamiast indeksu i zapis GIF-a się o to wywraca.
         k.info.pop("transparency", None)
     cel = WYNIK / "browser.gif"
     w_palecie[0].save(cel, save_all=True, append_images=w_palecie[1:],
-                      duration=czasy, loop=0, optimize=True)
-    print(f"  docs/media/browser.gif  {len(w_palecie)} klatek, {cel.stat().st_size // 1024} KB")
+                      duration=1000 // FPS, loop=0, optimize=True)
+    rozmiar = cel.stat().st_size
+    print(f"  docs/media/browser.gif  {len(w_palecie)} klatek, {rozmiar // 1024} KB"
+          + ("  UWAGA: ponad 5 MiB, galeria Modrintha odrzuci" if rozmiar > 5 * 1024 ** 2 else ""))
 
 
 def main() -> None:
