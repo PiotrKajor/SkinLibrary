@@ -144,7 +144,7 @@ python3 tools/check_lang.py  # klucze komunikatów zgodne we wszystkich językac
 
 Jar ląduje w `build/libs/`.
 
-## 🐞 Coś nie działa?
+## ⚠️ Coś nie działa?
 
 <div align="center">
 
