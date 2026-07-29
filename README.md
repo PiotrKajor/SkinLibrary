@@ -144,6 +144,17 @@ python3 tools/check_lang.py  # klucze komunikatów zgodne we wszystkich językac
 
 Jar ląduje w `build/libs/`.
 
+## Zgłaszanie błędów
+
+Błędy i propozycje zbieramy w [zakładce Issues](https://github.com/PiotrKajor/SkinLibrary/issues).
+Formularz zgłoszenia sam pyta o to, co potrzebne: wersję moda, wersję Minecrafta, loader
+i fragment logu.
+
+Do zgłoszenia dołącz **`logs/latest.log` z serwera** — bez niego zwykle nie da się nic
+ustalić. Gdy serwer się wywalił, dorzuć też plik z `crash-reports/`. Jeśli komenda kończy
+się komunikatem „An unexpected error occurred", ślad po niej jest właśnie w logu serwera,
+a nie na czacie.
+
 ## Licencja
 
 [MIT](LICENSE).

@@ -1,0 +1,69 @@
+name: Bug report
+description: Something in SkinLibrary does not work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill in the versions and attach the log — without them a report is usually
+        impossible to act on. The server log is at `logs/latest.log`; a crash leaves a file
+        in `crash-reports/` as well.
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: SkinLibrary version
+      placeholder: "1.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mc-version
+    attributes:
+      label: Minecraft version
+      options: ["1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5",
+                "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "other"]
+    validations:
+      required: true
+
+  - type: input
+    id: loader
+    attributes:
+      label: Loader and version
+      description: Fabric, or NeoForge with Sinytra Connector
+      placeholder: "Fabric 0.19.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+      placeholder: |
+        Typed /skin random, got "An unexpected error occurred trying to execute that command".
+        Expected the skin to change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Server log
+      description: >
+        Paste the relevant part of `logs/latest.log` — the lines around the moment it broke.
+        For a crash, attach the file from `crash-reports/`. This box renders as code, no
+        backticks needed.
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before reporting
+      options:
+        - label: Fabric API and Fabric Tailor are installed on the server
+          required: true
+        - label: I am on the latest SkinLibrary release
+          required: true

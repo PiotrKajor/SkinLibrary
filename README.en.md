@@ -143,6 +143,16 @@ python3 tools/check_lang.py  # message keys match across languages
 
 The jar lands in `build/libs/`.
 
+## Reporting bugs
+
+Bugs and suggestions go to the [issue tracker](https://github.com/PiotrKajor/SkinLibrary/issues).
+The report form asks for what is needed: mod version, Minecraft version, loader and a slice
+of the log.
+
+Attach **the server's `logs/latest.log`** — without it a report is usually impossible to act
+on. If the server went down, add the file from `crash-reports/` too. When a command ends with
+"An unexpected error occurred", the trace is in the server log, not in chat.
+
 ## License
 
 [MIT](LICENSE).

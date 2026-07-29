@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question about setup
+    url: https://github.com/PiotrKajor/SkinLibrary#readme
+    about: Installation, skins.json format and the libraryUrl option are covered in the README.
