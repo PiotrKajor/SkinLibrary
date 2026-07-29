@@ -20,7 +20,7 @@ ZRODLA = Path(sys.argv[1] if len(sys.argv) > 1
 WYNIK = Path(__file__).resolve().parent.parent / "docs" / "media"
 FONTY = Path("/home/skynet/WebRoot/Fonts")
 
-TLO_GORA, TLO_DOL = (16, 18, 22), (25, 29, 35)
+TLO = (22, 24, 28)                # płaskie tło pod kolor ciemnego motywu Modrintha
 ZIELEN = (27, 217, 106)          # akcent Modrintha
 SZARY = (150, 158, 170)
 SWIATLO = (86, 104, 128)          # snop w tle, chłodny — postać ma się na czym odciąć
@@ -55,18 +55,16 @@ def rendery() -> list[Image.Image]:
 
 
 def tlo(szer: int, wys: int, reflektor=None, cien_y: int = 0) -> Image.Image:
-    """Ciemny gradient, opcjonalny snop światła w tle i cień pod stopami.
+    """Płaskie ciemne tło, opcjonalny snop światła i cień pod stopami.
+
+    Tło jest jednolite, nie gradientowe, z powodu palety: gradient to setki odcieni szarości,
+    które w GIF-ie zjadają miejsce potrzebne skinom, a wtedy wspólna paleta przestaje starczać.
 
     Światło idzie ZA postać, nie na nią: aura obrysowująca sylwetkę wyglądała jak mgła,
     a rozjaśniona plama tła robi to samo — odcina czarną sylwetkę „bez skina" — i przy
     okazji osadza postać w kadrze zamiast doklejać jej świecącą obwódkę.
     """
-    plotno = Image.new("RGB", (szer, wys))
-    rysuj = ImageDraw.Draw(plotno)
-    for y in range(wys):
-        t = y / max(wys - 1, 1)
-        rysuj.line([(0, y), (szer, y)],
-                   fill=tuple(round(g + (d - g) * t) for g, d in zip(TLO_GORA, TLO_DOL)))
+    plotno = Image.new("RGB", (szer, wys), TLO)
 
     if reflektor:
         # Elipsa rozmyta na własnej masce, nie radial_gradient: ten drugi zanika do zera
@@ -80,7 +78,7 @@ def tlo(szer: int, wys: int, reflektor=None, cien_y: int = 0) -> Image.Image:
         plotno.paste(Image.new("RGB", (szer, wys), SWIATLO), (0, 0), maska)
 
     if cien_y:
-        x = reflektor[0] if reflektor else szer // 2
+        x = reflektor[0] if reflektor else int(szer * 0.23)
         r_x, r_y = int(szer * 0.10), int(wys * 0.022)
         maska = Image.new("L", (szer, wys), 0)
         ImageDraw.Draw(maska).ellipse((x - r_x, cien_y - r_y, x + r_x, cien_y + r_y), fill=150)
@@ -94,6 +92,11 @@ def popiersie(render: Image.Image) -> Image.Image:
     bok = int(render.height * 0.52)
     lewo = (render.width - bok) // 2
     return render.crop((lewo, 0, lewo + bok, bok))
+
+
+def pusty_kadr(kadr: Image.Image) -> bool:
+    """Czy w kadrze nie widać nic poza jednolitą sylwetką (mniej niż 5 barw)."""
+    return len({p[:3] for p in kadr.getdata() if p[3] > 200}) < 5
 
 
 def postac(render: Image.Image, wysokosc: int) -> Image.Image:
@@ -132,15 +135,18 @@ def klatki(plotno_tla: Image.Image, warstwy: list[Image.Image], pozycja,
 
 def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int],
                kolory: int = 255) -> None:
-    """Każda klatka dostaje własną paletę, bez ditheringu.
+    """Jedna paleta na cały GIF, bez ditheringu.
 
-    Wspólna paleta na osiem różnych skinów nie starcza: 256 kolorów rozkłada się na
-    wszystkie stroje naraz i cieniowanie rozłazi się w szum (z ditheringiem) albo
-    w plamy (bez). GIF pozwala na paletę lokalną per klatka — tła i tak nie rusza,
-    bo we wszystkich klatkach jest identyczne.
+    Paleta liczona per klatka wygląda lepiej na samych skinach, ale wszystko, co w kadrze
+    stałe, dostaje wtedy w każdej klatce inne przybliżenie — zielony napis /skin chodził
+    tak od (27,217,106) do (101,204,143) i widocznie migotał. Wspólna paleta trzyma stałe
+    elementy w ryzach; miejsce na nią bierze się stąd, że tło jest płaskie.
     """
-    w_palecie = [o.quantize(colors=kolory, method=Image.MEDIANCUT, dither=Image.NONE)
-                 for o in obrazy]
+    pasek = Image.new("RGB", (obrazy[0].width, obrazy[0].height * len(obrazy)))
+    for i, o in enumerate(obrazy):
+        pasek.paste(o, (0, i * obrazy[0].height))
+    paleta = pasek.quantize(colors=kolory, method=Image.MEDIANCUT)
+    w_palecie = [o.quantize(palette=paleta, dither=Image.NONE) for o in obrazy]
     w_palecie[0].save(sciezka, save_all=True, append_images=w_palecie[1:],
                       duration=czasy, loop=0, optimize=False)
     print(f"  {sciezka.relative_to(WYNIK.parent.parent)}  "
@@ -151,7 +157,9 @@ def logo(warstwy_zrodlowe: list[Image.Image]) -> None:
     # 384 px i 128 kolorów, bo ikona projektu na Modrincie musi zmieścić się w 256 KiB
     # (i tak wyświetla się w kilkudziesięciu pikselach).
     bok = 384
-    kadry = [popiersie(r) for r in warstwy_zrodlowe]
+    # Druga sylwetka bez skina ma znak zapytania na klatce piersiowej, więc w kadrze na
+    # popiersie zostaje z niej sam czarny prostokąt. Rolę „bez skina" pełni klatka startowa.
+    kadry = [popiersie(r) for r in warstwy_zrodlowe if not pusty_kadr(popiersie(r))]
     wysokosc = int(bok * 0.92)
     warstwy = [postac(k, wysokosc) for k in kadry]
     # Bez snopa i bez cienia: przy takim zbliżeniu popiersie samo wypełnia kadr.
@@ -170,9 +178,10 @@ def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
     warstwy = [postac(r, wysokosc) for r in warstwy_zrodlowe]
     lewa = int(szer * 0.23)
     stopy = int(wys * 0.94)
-    plotno = tlo(szer, wys,
-                 reflektor=(lewa, int(wys * 0.52), int(szer * 0.20), int(wys * 0.60), 0.42),
-                 cien_y=stopy)
+    # Bez snopa: przy jednej palecie na cały GIF miękki gradient rozkłada się na kilkanaście
+    # odcieni i widać koncentryczne obwódki. Płaskie tło nie ma jak się prążkować, a ciemna
+    # sylwetka i tak się od niego odcina.
+    plotno = tlo(szer, wys, cien_y=stopy)
 
     rysuj = ImageDraw.Draw(plotno)
     tytul = ImageFont.truetype(str(FONTY / "Poppins-ExtraBold.ttf"), 92)
@@ -180,18 +189,20 @@ def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
     mono = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 34)
 
     x = int(szer * 0.42)
-    rysuj.text((x, 210), "SkinLibrary", font=tytul, fill=(255, 255, 255))
-    rysuj.text((x, 320), "Change your skin without leaving the server",
+    # Wiersze rozsunięte: Poppins ExtraBold w 92 px ma wydłużenia dolne, które przy
+    # ciaśniejszym odstępie wchodziły w podtytuł.
+    rysuj.text((x, 196), "SkinLibrary", font=tytul, fill=(255, 255, 255))
+    rysuj.text((x, 330), "Change your skin without leaving the server",
                font=podtytul, fill=SZARY)
 
     # Pigułka z komendą — to pierwsza rzecz, której szuka się w opisie moda.
     napis = "/skin"
     w_tekstu = rysuj.textlength(napis, font=mono)
-    rysuj.rounded_rectangle((x, 390, x + w_tekstu + 52, 462), radius=14, fill=(31, 35, 41))
-    rysuj.text((x + 26, 403), napis, font=mono, fill=ZIELEN)
+    rysuj.rounded_rectangle((x, 404, x + w_tekstu + 52, 476), radius=14, fill=(33, 37, 44))
+    rysuj.text((x + 26, 417), napis, font=mono, fill=ZIELEN)
 
     pozycja = lambda w: (lewa - w.width // 2, stopy - w.height)
-    obrazy, czasy = klatki(plotno, warstwy, pozycja)
+    obrazy, czasy = klatki(plotno, warstwy, pozycja, z_blyskiem=False)
     zapisz_gif(WYNIK / "hero.gif", obrazy, czasy)
 
 
