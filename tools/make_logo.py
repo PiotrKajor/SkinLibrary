@@ -92,13 +92,19 @@ def rozjasniona(warstwa: Image.Image) -> Image.Image:
     return Image.blend(warstwa, biel, 0.7)
 
 
-def klatki(plotno_tla: Image.Image, warstwy: list[Image.Image],
-           pozycja) -> tuple[list[Image.Image], list[int]]:
-    """Każdy skin trzyma się chwilę, podmiana idzie przez jednoklatkowy błysk."""
+def klatki(plotno_tla: Image.Image, warstwy: list[Image.Image], pozycja,
+           z_blyskiem: bool = True) -> tuple[list[Image.Image], list[int]]:
+    """Każdy skin trzyma się chwilę, podmiana idzie przez jednoklatkowy błysk.
+
+    Ikona jedzie bez błysku: w kilkudziesięciu pikselach i tak go nie widać, a klatek
+    robi się dwa razy mniej — czyli mieści się w limicie 256 KiB.
+    """
     obrazy, czasy = [], []
     for warstwa in warstwy:
         swiatlo = obrys(warstwa)
-        for wersja, ms in ((rozjasniona(warstwa), MS_BLYSK), (warstwa, MS_SKIN)):
+        etapy = ([(rozjasniona(warstwa), MS_BLYSK)] if z_blyskiem else []) \
+            + [(warstwa, MS_SKIN + (0 if z_blyskiem else MS_BLYSK))]
+        for wersja, ms in etapy:
             kadr = plotno_tla.copy()
             gdzie = pozycja(wersja)
             kadr.paste(swiatlo, gdzie, swiatlo)
@@ -108,7 +114,8 @@ def klatki(plotno_tla: Image.Image, warstwy: list[Image.Image],
     return obrazy, czasy
 
 
-def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int]) -> None:
+def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int],
+               kolory: int = 255) -> None:
     """Każda klatka dostaje własną paletę, bez ditheringu.
 
     Wspólna paleta na osiem różnych skinów nie starcza: 256 kolorów rozkłada się na
@@ -116,7 +123,7 @@ def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int]) -> No
     w plamy (bez). GIF pozwala na paletę lokalną per klatka — tła i tak nie rusza,
     bo we wszystkich klatkach jest identyczne.
     """
-    w_palecie = [o.quantize(colors=255, method=Image.MEDIANCUT, dither=Image.NONE)
+    w_palecie = [o.quantize(colors=kolory, method=Image.MEDIANCUT, dither=Image.NONE)
                  for o in obrazy]
     w_palecie[0].save(sciezka, save_all=True, append_images=w_palecie[1:],
                       duration=czasy, loop=0, optimize=False)
@@ -125,15 +132,17 @@ def zapisz_gif(sciezka: Path, obrazy: list[Image.Image], czasy: list[int]) -> No
 
 
 def logo(warstwy_zrodlowe: list[Image.Image]) -> None:
-    bok = 640
+    # 384 px i 128 kolorów, bo ikona projektu na Modrincie musi zmieścić się w 256 KiB
+    # (i tak wyświetla się w kilkudziesięciu pikselach).
+    bok = 384
     wysokosc = int(bok * 0.72)
     warstwy = [postac(r, wysokosc) for r in warstwy_zrodlowe]
     plotno = tlo(bok, bok, bok // 2)
     pozycja = lambda w: ((bok - w.width) // 2, int(bok * 0.95) - w.height)
 
-    obrazy, czasy = klatki(plotno, warstwy, pozycja)
-    zapisz_gif(WYNIK / "logo.gif", obrazy, czasy)
-    obrazy[1].save(WYNIK / "logo.png")          # klatka bez błysku = ikona statyczna
+    obrazy, czasy = klatki(plotno, warstwy, pozycja, z_blyskiem=False)
+    zapisz_gif(WYNIK / "logo.gif", obrazy, czasy, kolory=128)
+    obrazy[0].save(WYNIK / "logo.png")          # sylwetka bez skina = ikona statyczna
     print(f"  docs/media/logo.png  {(WYNIK / 'logo.png').stat().st_size // 1024} KB")
 
 
