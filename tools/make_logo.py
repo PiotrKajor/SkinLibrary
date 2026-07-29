@@ -241,7 +241,19 @@ def poradnik() -> None:
     pasek = Image.new("RGB", (szerokosc, klatki_wy[0].height * len(klatki_wy)))
     for i, k in enumerate(klatki_wy):
         pasek.paste(k, (0, i * klatki_wy[0].height))
-    paleta = pasek.quantize(colors=200, method=Image.MEDIANCUT)
+    # Paleta liczona gęstościowo (MEDIANCUT) dobrze oddaje trawę i ziemię, ale gubi biel
+    # tekstu czatu: jasnych pikseli jest w kadrze mało, więc przepadały w podziale i tekst
+    # schodził do zielonkawej szarości. MAXCOVERAGE ratuje tekst, lecz odbiera odcienie tłu.
+    # Stąd jedno i drugie: baza z MEDIANCUT plus dopisane wprost najjaśniejsze barwy nagrania.
+    JASNYCH = 40
+    baza = pasek.quantize(colors=200 - JASNYCH, method=Image.MEDIANCUT)
+    barwy = baza.getpalette()[:(200 - JASNYCH) * 3]
+    wystapienia = pasek.getcolors(maxcolors=1 << 20) or []
+    for kolor in sorted((c for _, c in wystapienia), key=sum, reverse=True)[:JASNYCH]:
+        barwy += list(kolor)
+    barwy += [0, 0, 0] * (256 - len(barwy) // 3)
+    paleta = Image.new("P", (1, 1))
+    paleta.putpalette(barwy)
 
     w_palecie = [k.quantize(palette=paleta, dither=Image.NONE) for k in klatki_wy]
     for k in w_palecie:
