@@ -160,55 +160,55 @@ public final class SkinCommand {
 
     private static int zBiblioteki(CommandContext<CommandSourceStack> ctx, String nazwa) {
         ServerPlayer gracz = gracz(ctx);
-        if (gracz == null || gracz.getServer() == null) return 0;
+        if (gracz == null) return 0;
         Optional<Library.Entry> wpis = SkinLibrary.library().find(nazwa);
         if (wpis.isEmpty()) {
             gracz.sendSystemMessage(tekst("msg.unknown_skin", ChatFormatting.RED, nazwa));
             return 0;
         }
-        zaloz(gracz, gracz.getServer(),
+        zaloz(gracz, ctx.getSource().getServer(),
                 () -> SkinLibrary.library().texture(wpis.get()), "msg.applied", wpis.get().name());
         return 1;
     }
 
     private static int zGracza(CommandContext<CommandSourceStack> ctx, String nick) {
         ServerPlayer gracz = gracz(ctx);
-        if (gracz == null || gracz.getServer() == null) return 0;
-        zaloz(gracz, gracz.getServer(), () -> Tailor.fromPlayerName(nick), "msg.applied", nick);
+        if (gracz == null) return 0;
+        zaloz(gracz, ctx.getSource().getServer(), () -> Tailor.fromPlayerName(nick), "msg.applied", nick);
         return 1;
     }
 
     private static int zUrl(CommandContext<CommandSourceStack> ctx, String adres) {
         ServerPlayer gracz = gracz(ctx);
-        if (gracz == null || gracz.getServer() == null) return 0;
+        if (gracz == null) return 0;
         if (!adres.startsWith("http://") && !adres.startsWith("https://")) {
             gracz.sendSystemMessage(tekst("msg.bad_url", ChatFormatting.RED));
             return 0;
         }
-        zaloz(gracz, gracz.getServer(),
+        zaloz(gracz, ctx.getSource().getServer(),
                 () -> Tailor.fromUrl(adres, SkinLibrary.config().slimByDefault), "msg.applied_url");
         return 1;
     }
 
     private static int losowy(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer gracz = gracz(ctx);
-        if (gracz == null || gracz.getServer() == null) return 0;
+        if (gracz == null) return 0;
         List<Library.Entry> wszystkie = SkinLibrary.library().entries();
         if (wszystkie.isEmpty()) {
             gracz.sendSystemMessage(tekst("msg.empty_library", ChatFormatting.GRAY));
             return 0;
         }
         Library.Entry wpis = wszystkie.get(ThreadLocalRandom.current().nextInt(wszystkie.size()));
-        zaloz(gracz, gracz.getServer(),
+        zaloz(gracz, ctx.getSource().getServer(),
                 () -> SkinLibrary.library().texture(wpis), "msg.applied", wpis.name());
         return 1;
     }
 
     private static int reset(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer gracz = gracz(ctx);
-        if (gracz == null || gracz.getServer() == null) return 0;
+        if (gracz == null) return 0;
         // Skin własnego konta bierzemy po nicku — ta sama droga, co /skin player.
-        zaloz(gracz, gracz.getServer(),
+        zaloz(gracz, ctx.getSource().getServer(),
                 () -> Tailor.fromPlayerName(gracz.getGameProfile().getName()), "msg.reset");
         return 1;
     }
