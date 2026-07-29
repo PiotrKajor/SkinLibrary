@@ -1,41 +1,85 @@
-# SkinLibrary
+<div align="center">
 
-Server-side skin library for Fabric with a browsable, clickable list in chat.
+<sub><b>Polski</b> · <a href="README.en.md">English</a></sub>
 
-Drop `.png` files into a folder — players pick skins with `/skin`, tab-complete included.
-No web service to host, no API keys, no client-side mod.
+# 🎭 SkinLibrary
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+**Serwerowa biblioteka skinów dla Fabrica — gracz wybiera skin z klikalnej listy na czacie.**
 
-## What it does
+Wrzucasz pliki `.png` do folderu, gracz wchodzi zwykłym klientem i wpisuje `/skin`.
+Nic do zainstalowania po stronie gracza, żadnego własnego serwisu WWW ani kluczy API.
 
-| Command | What happens |
+[![Pobierz jar](https://img.shields.io/badge/Pobierz-skinlibrary.jar-4fb4ff?style=for-the-badge)](../../releases/latest)
+&nbsp;
+![Minecraft](https://img.shields.io/badge/Minecraft%201.21%2B%20%7C%20Fabric-2a3245?style=for-the-badge)
+&nbsp;
+![Licencja](https://img.shields.io/badge/licencja-MIT-3ddc84?style=for-the-badge)
+
+<!-- Miejsce na główny obrazek/GIF: wrzuć plik do docs/media/ i odkomentuj linię poniżej. -->
+<!-- <img src="docs/media/hero.gif" alt="Lista skinów na czacie Minecrafta" width="720"> -->
+
+</div>
+
+---
+
+## Co to robi
+
+| Komenda | Co się dzieje |
 |---|---|
-| `/skin` | Browse the library — paged, grouped by author, entries are clickable |
-| `/skin <name>` | Wear a skin from the library |
-| `/skin random` | Wear a random one |
-| `/skin player <nick>` | Wear the skin of any Minecraft account |
-| `/skin url <address>` | Wear a skin from a PNG link |
-| `/skin reset` | Back to your own account skin |
-| `/skin reload` | Reload the library (operators) |
+| `/skin` | Przegląda bibliotekę — strony, grupowanie po autorze, pozycje są klikalne |
+| `/skin <nazwa>` | Zakłada skin z biblioteki |
+| `/skin random` | Zakłada losowy |
+| `/skin player <nick>` | Zakłada skin dowolnego konta Minecraft |
+| `/skin url <adres>` | Zakłada skin z linku do PNG |
+| `/skin reset` | Wraca do skina własnego konta |
+| `/skin reload` | Przeładowuje bibliotekę (operatorzy) |
 
-[FabricTailor](https://modrinth.com/mod/fabrictailor) does the actual skin swapping and the
-MineSkin upload; SkinLibrary adds the curated library and the in-chat browser on top of it.
+Samą podmianę skina i wysyłkę do MineSkin robi
+[FabricTailor](https://modrinth.com/mod/fabrictailor); SkinLibrary dokłada do tego
+gotową bibliotekę i przeglądarkę na czacie.
 
-## Install
+## Jak to wygląda
 
-1. Put `fabric-api`, `fabrictailor` and `skinlibrary` into your server's `mods/` folder.
-2. Start the server once — it creates `config/skinlibrary/`.
-3. Drop `.png` skins (64×64 or 64×32) into `config/skinlibrary/skins/`.
-4. `/skin reload`, and they are live.
+Materiały trzymamy w [`docs/media/`](docs/media/) — nazwy plików są już podpięte poniżej,
+po wrzuceniu nagrania wystarczy odkomentować odpowiednią linię
+(instrukcja nagrywania: [docs/media/README.md](docs/media/README.md)).
 
-The file name becomes the skin name: `pirate.png` → `/skin pirate`.
+<!-- ![Przeglądanie biblioteki na czacie](docs/media/browser.gif) -->
+<!-- ![Zmiana skina w grze](docs/media/skin-change.gif) -->
+<!-- Dłuższe demo (.mp4) wgraj do wydania albo przeciągnij do zgłoszenia i wklej tu link. -->
 
-Server-side only — players join with a vanilla client and need nothing installed.
+## Funkcje
 
-## Configuration
+- 🖱️ **Klikalna lista na czacie** — stronicowana, grupowana po autorze, z nawigacją
+  „◀ Poprzednia / Następna ▶" i skrótami 🎲 Losowy / ↺ Oryginalny.
+- ⌨️ **Podpowiedzi (tab-complete)** nazw skinów — nie trzeba pamiętać, co jest w bibliotece.
+- 📁 **Biblioteka to zwykły folder** — nazwa pliku staje się nazwą skina, `/skin reload` i gotowe.
+- 🌐 **Skiny spoza biblioteki** — `/skin player <nick>` i `/skin url <adres>`, jedno i drugie
+  można wyłączyć w konfiguracji.
+- 🧠 **Cache tekstur** — raz pobrana tekstura nie leci do MineSkin drugi raz.
+- 🗣️ **Tłumaczenia** — `en_us` i `pl_pl` w środku, własny język bez przebudowy jara.
+- 📦 **Jeden jar na 1.21+** — bez mixinów, bez buildu pod każdą wersję.
+- 🔌 **Opcjonalny katalog po HTTP** (`libraryUrl`) — jeśli już masz własny serwis ze skinami.
 
-`config/skinlibrary/config.json`, created on first start:
+## Wymagania
+
+Serwer Fabric **1.21 lub nowszy**, Java 21, a w `mods/`:
+[Fabric API](https://modrinth.com/mod/fabric-api) i [FabricTailor](https://modrinth.com/mod/fabrictailor).
+
+Mod jest wyłącznie serwerowy — gracze łączą się niezmodowanym klientem.
+
+## Szybki start
+
+1. Wrzuć `fabric-api`, `fabrictailor` i `skinlibrary` do folderu `mods/` serwera.
+2. Uruchom serwer raz — utworzy `config/skinlibrary/`.
+3. Wrzuć skiny `.png` (64×64 albo 64×32) do `config/skinlibrary/skins/`.
+4. `/skin reload` i są dostępne.
+
+Nazwa pliku staje się nazwą skina: `pirat.png` → `/skin pirat`.
+
+## Konfiguracja
+
+`config/skinlibrary/config.json`, tworzony przy pierwszym starcie:
 
 ```json
 {
@@ -51,17 +95,17 @@ Server-side only — players join with a vanilla client and need nothing install
 }
 ```
 
-Nothing here is required — the defaults work. Notable options:
+Nic tu nie jest wymagane — domyślne wartości działają. Warte uwagi:
 
-- **`commandAliases`** — rename the command if another mod already owns `/skin`.
-- **`slimByDefault`** — treat file skins as the slim (Alex) model.
-- **`libraryUrl`** — optional HTTP catalogue, if you already run one. It must answer with
+- **`commandAliases`** — zmiana nazwy komendy, gdy `/skin` zajmuje już inny mod.
+- **`slimByDefault`** — traktuje skiny z plików jako model smukły (Alex).
+- **`libraryUrl`** — opcjonalny katalog po HTTP, jeśli już taki prowadzisz. Musi odpowiadać
   `{"skins": [{"name": "...", "value": "...", "signature": "...", "author": "..."}]}`;
-  entries may use `url` instead of `value`.
+  zamiast `value` wpis może podać `url`.
 
-### Richer entries
+### Bogatsze wpisy
 
-For anything beyond "a PNG in a folder", add `config/skinlibrary/skins.json`:
+Na wszystko poza „PNG w folderze" jest `config/skinlibrary/skins.json`:
 
 ```json
 {
@@ -71,33 +115,33 @@ For anything beyond "a PNG in a folder", add `config/skinlibrary/skins.json`:
 }
 ```
 
-Entries are grouped by `author` in the browser, so a shared server can see who added what.
+Wpisy są w przeglądarce grupowane po `author`, więc na wspólnym serwerze widać, kto co dodał.
 
-### Translations
+### Tłumaczenia
 
-Built in: `en_us`, `pl_pl`. Set `language` in the config.
+W środku: `en_us`, `pl_pl` — wybierasz polem `language`.
 
-To add your own, drop `config/skinlibrary/lang/<code>.json` with the same keys as
-[`en_us.json`](src/main/resources/assets/skinlibrary/lang/en_us.json) — no rebuild needed.
+Własny język: wrzuć `config/skinlibrary/lang/<kod>.json` z tymi samymi kluczami co
+[`en_us.json`](src/main/resources/assets/skinlibrary/lang/en_us.json) — bez przebudowy jara.
 
-## Minecraft versions
+## Wersje Minecrafta
 
-One jar covers **1.21 and up**. The mod has no mixins and stays off the parts of the API that
-shift between releases, so it does not need a rebuild per point release.
+Jeden jar obsługuje **1.21 i nowsze**. Mod nie ma mixinów i trzyma się z dala od tych części
+API, które zmieniają się między wydaniami, więc nie wymaga buildu pod każdą wersję.
 
-The single exception is clickable chat: Minecraft 1.21.5 replaced the click/hover event API.
-On 1.21.5+ the list is clickable; on older releases the same list prints without click support
-and everything else works unchanged.
+Jedyny wyjątek to klikalny czat: Minecraft 1.21.5 wymienił API zdarzeń kliknięcia/najechania.
+Na 1.21.5+ lista jest klikalna, na starszych wydaniach ta sama lista wypisuje się bez klikania,
+a reszta działa bez zmian.
 
-## Building
+## Budowanie
 
 ```bash
-./gradlew build              # needs Java 21
-python3 tools/check_lang.py  # message keys match across languages
+./gradlew build              # wymaga Java 21
+python3 tools/check_lang.py  # klucze komunikatów zgodne we wszystkich językach
 ```
 
-The jar lands in `build/libs/`.
+Jar ląduje w `build/libs/`.
 
-## License
+## Licencja
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE).
