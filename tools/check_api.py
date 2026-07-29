@@ -12,10 +12,16 @@ Dziedziczenia nie rozwijamy — liczy się samo istnienie symbolu, i to wystarcz
 tak właśnie wyszły oba błędy z 2026-07-29 (method_5682 znikło w 1.21.10,
 method_64398 nie istniało przed 1.21.9).
 
-Osobno: bezpośrednie odwołania do com.mojang.authlib są zgłaszane zawsze. Ta biblioteka
-zmienia kształt między wydaniami MC (GameProfile bywa klasą z getName(), bywa rekordem
-z name()) i nie ma jej w mapowaniach, więc nie da się jej zweryfikować — jedyne bezpieczne
-użycie to refleksja.
+Osobno zgłaszane są dwie rzeczy, których sprawdzenie samych symboli nie łapie:
+
+* **odwołania do com.mojang.authlib** — biblioteka zmienia kształt między wydaniami MC
+  (GameProfile bywa klasą z getName(), bywa rekordem z name()) i nie ma jej w mapowaniach;
+* **rzuty na typy Minecrafta** (`checkcast`) — symbol może istnieć w każdej wersji, a i tak
+  wysypać się na hierarchii. Tak było z `(CommandSource) player`: metoda istniała wszędzie,
+  ale w 1.21.9 Entity przestało implementować ten interfejs i każde /skin kończyło się
+  ClassCastException. Weryfikacja symboli tego nie widziała.
+
+W obu wypadkach jedyne bezpieczne wyjście to refleksja albo API, które rzutu nie wymaga.
 
 Użycie:  python3 tools/check_api.py build/libs/skinlibrary-1.0.0.jar
 Wyjście: 0 = jar bezpieczny dla całego zakresu, 1 = są odwołania nie do odratowania.
@@ -42,6 +48,13 @@ OPCJONALNE = {"ChatCompat$Modern"}
 MAVEN = "https://maven.fabricmc.net/net/fabricmc/intermediary/{v}/intermediary-{v}-v2.jar"
 CACHE = Path.home() / ".cache" / "skinlibrary-mappings"
 SYMBOL = re.compile(r"\b(?:class|method|field)_\d+\b")
+RZUT = re.compile(r"checkcast.*net/minecraft/(class_\d+)")
+
+# Rzuty, które wstawia sam kompilator przy wymazywaniu generyków — nie ma ich w źródle,
+# więc nie ma czego naprawiać. class_2168 to CommandSourceStack, parametr typu w każdym
+# CommandContext i LiteralArgumentBuilder w tym modzie. Typy z com.mojang.brigadier
+# pomijamy w ogóle: to osobna biblioteka, jej hierarchia nie zależy od wersji Minecrafta.
+RZUTY_Z_GENERYKOW = {"class_2168"}
 
 
 def symbole_jara(jar: Path) -> tuple[set[str], list[str]]:
@@ -51,7 +64,7 @@ def symbole_jara(jar: Path) -> tuple[set[str], list[str]]:
     więc wolno im sięgać po API nowsze niż dolna granica zakresu.
     """
     uzyte: set[str] = set()
-    authlib: set[str] = set()
+    ryzykowne: set[str] = set()
     with tempfile.TemporaryDirectory() as tmp:
         with zipfile.ZipFile(jar) as z:
             z.extractall(tmp)
@@ -64,8 +77,13 @@ def symbole_jara(jar: Path) -> tuple[set[str], list[str]]:
             out = subprocess.run(["javap", "-c", "-p", str(plik)],
                                  capture_output=True, text=True, check=True).stdout
             uzyte |= set(SYMBOL.findall(out))
-            authlib |= {l.strip() for l in out.splitlines() if "com/mojang/authlib" in l}
-    return uzyte, sorted(authlib)
+            for linia in out.splitlines():
+                if "com/mojang/authlib" in linia:
+                    ryzykowne.add(f"authlib wprost: {linia.strip()}")
+                rzut = RZUT.search(linia)
+                if rzut and rzut.group(1) not in RZUTY_Z_GENERYKOW:
+                    ryzykowne.add(f"rzut na typ MC ({rzut.group(1)}): {linia.strip()}")
+    return uzyte, sorted(ryzykowne)
 
 
 def symbole_wersji(wersja: str) -> set[str]:
@@ -86,7 +104,7 @@ def main() -> int:
     if not jar.exists():
         sys.exit(f"BŁĄD: nie ma pliku {jar}")
 
-    uzyte, authlib = symbole_jara(jar)
+    uzyte, ryzykowne = symbole_jara(jar)
     print(f"{jar.name}: {len(uzyte)} identyfikatorów MC, {len(SUPPORTED)} wersji do sprawdzenia\n")
 
     zle = False
@@ -98,11 +116,10 @@ def main() -> int:
         else:
             print(f"  {wersja:<8} ok")
 
-    if authlib:
+    if ryzykowne:
         zle = True
-        print("\n  authlib wołany wprost (kształt klas zmienia się między wydaniami —")
-        print("  jedyne bezpieczne użycie to refleksja):")
-        for linia in authlib:
+        print("\n  konstrukcje, których sprawdzenie symboli nie obejmuje:")
+        for linia in ryzykowne:
             print(f"    {linia}")
 
     print("\n" + ("ODRZUCONY — nie wgrywaj tego jara" if zle

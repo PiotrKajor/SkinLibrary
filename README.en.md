@@ -2,6 +2,8 @@
 
 <sub><a href="README.md">Polski</a> · <b>English</b></sub>
 
+<sub><a href="CHANGELOG.en.md">Changelog</a></sub>
+
 # 🎭 SkinLibrary
 
 **Server-side skin library for Fabric — players pick a skin from a clickable list in chat.**
@@ -11,7 +13,7 @@ Nothing to install on their side, no web service to host, no API keys.
 
 [![Download jar](https://img.shields.io/badge/Download-skinlibrary.jar-4fb4ff?style=for-the-badge)](../../releases/latest)
 &nbsp;
-![Minecraft](https://img.shields.io/badge/Minecraft%201.21%2B%20%7C%20Fabric-2a3245?style=for-the-badge)
+![Minecraft](https://img.shields.io/badge/Minecraft%201.21%E2%80%931.21.10%20%7C%20Fabric-2a3245?style=for-the-badge)
 &nbsp;
 ![License](https://img.shields.io/badge/license-MIT-3ddc84?style=for-the-badge)
 
@@ -42,7 +44,8 @@ Media lives in [`docs/media/`](docs/media/) — the file names below are already
 so once a recording is in place just uncomment the matching line
 (recording tips: [docs/media/README.md](docs/media/README.md)).
 
-<!-- ![Browsing the library in chat](docs/media/browser.gif) -->
+![Browsing the library in chat](docs/media/browser.gif)
+
 <!-- ![Changing a skin in game](docs/media/skin-change.gif) -->
 <!-- For a longer demo (.mp4), attach it to a release or drag it into an issue and paste the link here. -->
 
@@ -56,12 +59,12 @@ so once a recording is in place just uncomment the matching line
   both switchable in the config.
 - 🧠 **Texture cache** — a texture fetched once is not sent to MineSkin again.
 - 🗣️ **Translations** — `en_us` and `pl_pl` built in, your own language without a rebuild.
-- 📦 **One jar for 1.21+** — no mixins, no per-version builds.
+- 📦 **One jar for 1.21–1.21.10** — no mixins, no per-version builds.
 - 🔌 **Optional HTTP catalogue** (`libraryUrl`) — if you already run a skin service.
 
 ## Requirements
 
-A Fabric server on **1.21 or newer**, Java 21, and in `mods/`:
+A Fabric server on **1.21 through 1.21.10**, Java 21, and in `mods/`:
 [Fabric API](https://modrinth.com/mod/fabric-api) and [FabricTailor](https://modrinth.com/mod/fabrictailor).
 
 Server-side only — players join with a vanilla client and need nothing installed.
@@ -124,7 +127,7 @@ To add your own, drop `config/skinlibrary/lang/<code>.json` with the same keys a
 
 ## Minecraft versions
 
-One jar covers **1.21 and up**. The mod has no mixins and stays off the parts of the API that
+One jar covers **1.21 through 1.21.10**. The mod has no mixins and stays off the parts of the API that
 shift between releases, so it does not need a rebuild per point release.
 
 The single exception is clickable chat: Minecraft 1.21.5 replaced the click/hover event API.

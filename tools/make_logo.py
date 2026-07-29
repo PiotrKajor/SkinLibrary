@@ -45,8 +45,12 @@ def rendery() -> list[Image.Image]:
     def barwy(im):
         return len({p[:3] for p in im.getdata() if p[3] > 200})
 
-    anonim = min(obrazy, key=lambda p: barwy(obrazy[p]))
-    kolejnosc = [anonim] + [p for p in pliki if p != anonim]
+    # Klatka otwierająca: plik nazwany „start", a gdy go nie ma — ten o najmniejszej liczbie
+    # barw, czyli czarna sylwetka „bez skina". Sama liczba kolorów nie wystarcza, bo wygładzone
+    # krawędzie znaku zapytania potrafią dać ich kilkaset.
+    nazwane = [p for p in pliki if p.stem.lower().startswith("start")]
+    pierwszy = nazwane[0] if nazwane else min(obrazy, key=lambda p: barwy(obrazy[p]))
+    kolejnosc = [pierwszy] + [p for p in pliki if p != pierwszy]
     return [obrazy[p].crop(kadr) for p in kolejnosc]
 
 
@@ -191,12 +195,53 @@ def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
     zapisz_gif(WYNIK / "hero.gif", obrazy, czasy)
 
 
+def poradnik() -> None:
+    """Nagranie z gry → docs/media/browser.gif, w rozmiarze do przyjęcia dla galerii.
+
+    Surowe nagranie ma 50 klatek na sekundę i 7 MB; do pokazania listy skinów wystarczy
+    połowa tego i węższy kadr. Tu wspólna paleta jest lepsza niż lokalna (odwrotnie niż
+    w logo): scena jest cały czas ta sama, więc jedna paleta wychodzi mniejsza.
+    """
+    nagrania = sorted(ZRODLA.glob("*/*.gif"))
+    if not nagrania:
+        print("  (brak nagrania z gry — pomijam browser.gif)")
+        return
+
+    zrodlo = Image.open(nagrania[0])
+    szerokosc = 960
+    klatki_wy, czasy = [], []
+    for i in range(zrodlo.n_frames):
+        if i % 2:                       # co druga klatka: 50 fps → 25 fps
+            continue
+        zrodlo.seek(i)
+        k = zrodlo.convert("RGB")
+        klatki_wy.append(k.resize((szerokosc, round(k.height * szerokosc / k.width)),
+                                  Image.LANCZOS))
+        czasy.append(2 * zrodlo.info.get("duration", 40))
+
+    pasek = Image.new("RGB", (szerokosc, klatki_wy[0].height * len(klatki_wy)))
+    for i, k in enumerate(klatki_wy):
+        pasek.paste(k, (0, i * klatki_wy[0].height))
+    paleta = pasek.quantize(colors=200, method=Image.MEDIANCUT)
+
+    w_palecie = [k.quantize(palette=paleta, dither=Image.NONE) for k in klatki_wy]
+    for k in w_palecie:
+        # Nagranie niesie ze sobą wpis o przezroczystości; po kwantyzacji wskazuje on
+        # na krotkę zamiast indeksu i zapis GIF-a się o to wywraca.
+        k.info.pop("transparency", None)
+    cel = WYNIK / "browser.gif"
+    w_palecie[0].save(cel, save_all=True, append_images=w_palecie[1:],
+                      duration=czasy, loop=0, optimize=True)
+    print(f"  docs/media/browser.gif  {len(w_palecie)} klatek, {cel.stat().st_size // 1024} KB")
+
+
 def main() -> None:
     WYNIK.mkdir(parents=True, exist_ok=True)
     zrodla = rendery()
     print(f"{len(zrodla)} renderów z {ZRODLA}")
     logo(zrodla)
     hero(zrodla)
+    poradnik()
 
 
 if __name__ == "__main__":

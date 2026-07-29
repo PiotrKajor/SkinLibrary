@@ -2,6 +2,8 @@
 
 <sub><b>Polski</b> · <a href="README.en.md">English</a></sub>
 
+<sub><a href="CHANGELOG.md">Historia zmian</a></sub>
+
 # 🎭 SkinLibrary
 
 **Serwerowa biblioteka skinów dla Fabrica — gracz wybiera skin z klikalnej listy na czacie.**
@@ -11,7 +13,7 @@ Nic do zainstalowania po stronie gracza, żadnego własnego serwisu WWW ani kluc
 
 [![Pobierz jar](https://img.shields.io/badge/Pobierz-skinlibrary.jar-4fb4ff?style=for-the-badge)](../../releases/latest)
 &nbsp;
-![Minecraft](https://img.shields.io/badge/Minecraft%201.21%2B%20%7C%20Fabric-2a3245?style=for-the-badge)
+![Minecraft](https://img.shields.io/badge/Minecraft%201.21%E2%80%931.21.10%20%7C%20Fabric-2a3245?style=for-the-badge)
 &nbsp;
 ![Licencja](https://img.shields.io/badge/licencja-MIT-3ddc84?style=for-the-badge)
 
@@ -43,7 +45,8 @@ Materiały trzymamy w [`docs/media/`](docs/media/) — nazwy plików są już po
 po wrzuceniu nagrania wystarczy odkomentować odpowiednią linię
 (instrukcja nagrywania: [docs/media/README.md](docs/media/README.md)).
 
-<!-- ![Przeglądanie biblioteki na czacie](docs/media/browser.gif) -->
+![Przeglądanie biblioteki na czacie](docs/media/browser.gif)
+
 <!-- ![Zmiana skina w grze](docs/media/skin-change.gif) -->
 <!-- Dłuższe demo (.mp4) wgraj do wydania albo przeciągnij do zgłoszenia i wklej tu link. -->
 
@@ -57,12 +60,12 @@ po wrzuceniu nagrania wystarczy odkomentować odpowiednią linię
   można wyłączyć w konfiguracji.
 - 🧠 **Cache tekstur** — raz pobrana tekstura nie leci do MineSkin drugi raz.
 - 🗣️ **Tłumaczenia** — `en_us` i `pl_pl` w środku, własny język bez przebudowy jara.
-- 📦 **Jeden jar na 1.21+** — bez mixinów, bez buildu pod każdą wersję.
+- 📦 **Jeden jar na 1.21–1.21.10** — bez mixinów, bez buildu pod każdą wersję.
 - 🔌 **Opcjonalny katalog po HTTP** (`libraryUrl`) — jeśli już masz własny serwis ze skinami.
 
 ## Wymagania
 
-Serwer Fabric **1.21 lub nowszy**, Java 21, a w `mods/`:
+Serwer Fabric **od 1.21 do 1.21.10**, Java 21, a w `mods/`:
 [Fabric API](https://modrinth.com/mod/fabric-api) i [FabricTailor](https://modrinth.com/mod/fabrictailor).
 
 Mod jest wyłącznie serwerowy — gracze łączą się niezmodowanym klientem.
@@ -125,7 +128,7 @@ Własny język: wrzuć `config/skinlibrary/lang/<kod>.json` z tymi samymi klucza
 
 ## Wersje Minecrafta
 
-Jeden jar obsługuje **1.21 i nowsze**. Mod nie ma mixinów i trzyma się z dala od tych części
+Jeden jar obsługuje **1.21 – 1.21.10**. Mod nie ma mixinów i trzyma się z dala od tych części
 API, które zmieniają się między wydaniami, więc nie wymaga buildu pod każdą wersję.
 
 Jedyny wyjątek to klikalny czat: Minecraft 1.21.5 wymienił API zdarzeń kliknięcia/najechania.
