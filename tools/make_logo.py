@@ -23,6 +23,7 @@ FONTY = Path("/home/skynet/WebRoot/Fonts")
 TLO_GORA, TLO_DOL = (16, 18, 22), (25, 29, 35)
 ZIELEN = (27, 217, 106)          # akcent Modrintha
 SZARY = (150, 158, 170)
+SWIATLO = (86, 104, 128)          # snop w tle, chłodny — postać ma się na czym odciąć
 
 MS_SKIN = 850                     # ile trzyma się jeden skin
 MS_BLYSK = 70                     # błysk w momencie podmiany
@@ -49,8 +50,13 @@ def rendery() -> list[Image.Image]:
     return [obrazy[p].crop(kadr) for p in kolejnosc]
 
 
-def tlo(szer: int, wys: int, srodek_x: int) -> Image.Image:
-    """Ciemny gradient z lekkim rozjaśnieniem tam, gdzie stanie postać."""
+def tlo(szer: int, wys: int, reflektor=None, cien_y: int = 0) -> Image.Image:
+    """Ciemny gradient, opcjonalny snop światła w tle i cień pod stopami.
+
+    Światło idzie ZA postać, nie na nią: aura obrysowująca sylwetkę wyglądała jak mgła,
+    a rozjaśniona plama tła robi to samo — odcina czarną sylwetkę „bez skina" — i przy
+    okazji osadza postać w kadrze zamiast doklejać jej świecącą obwódkę.
+    """
     plotno = Image.new("RGB", (szer, wys))
     rysuj = ImageDraw.Draw(plotno)
     for y in range(wys):
@@ -58,26 +64,32 @@ def tlo(szer: int, wys: int, srodek_x: int) -> Image.Image:
         rysuj.line([(0, y), (szer, y)],
                    fill=tuple(round(g + (d - g) * t) for g, d in zip(TLO_GORA, TLO_DOL)))
 
-    promien = int(wys * 0.55)
-    reflektor = Image.radial_gradient("L").resize((promien * 2, promien * 2))
-    reflektor = reflektor.point(lambda v: int((255 - v) * 0.10))
-    plotno.paste(Image.new("RGB", reflektor.size, (90, 105, 125)),
-                 (srodek_x - promien, wys // 2 - promien), reflektor)
+    if reflektor:
+        # Elipsa rozmyta na własnej masce, nie radial_gradient: ten drugi zanika do zera
+        # dopiero w rogach swojego kwadratu, więc na bokach zostawia widoczną, prostą
+        # krawędź — snop wygląda wtedy jak wklejony panel.
+        x, y, r_x, r_y, sila = reflektor
+        maska = Image.new("L", (szer, wys), 0)
+        ImageDraw.Draw(maska).ellipse((x - r_x // 2, y - r_y // 2, x + r_x // 2, y + r_y // 2),
+                                      fill=int(255 * sila))
+        maska = maska.filter(ImageFilter.GaussianBlur(r_x * 0.45))
+        plotno.paste(Image.new("RGB", (szer, wys), SWIATLO), (0, 0), maska)
+
+    if cien_y:
+        x = reflektor[0] if reflektor else szer // 2
+        r_x, r_y = int(szer * 0.10), int(wys * 0.022)
+        maska = Image.new("L", (szer, wys), 0)
+        ImageDraw.Draw(maska).ellipse((x - r_x, cien_y - r_y, x + r_x, cien_y + r_y), fill=150)
+        maska = maska.filter(ImageFilter.GaussianBlur(r_y))
+        plotno.paste(Image.new("RGB", (szer, wys), (8, 9, 11)), (0, 0), maska)
     return plotno
 
 
-def obrys(warstwa: Image.Image) -> Image.Image:
-    """Zielona poświata z konturu postaci.
-
-    Bez niej pierwsza klatka — czarna sylwetka — znika na ciemnym tle, a to ona ma być
-    twarzą moda. Przy okazji odcina od tła każdy kolejny skin.
-    """
-    ksztalt = warstwa.getchannel("A")
-    ksztalt = ksztalt.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(16))
-    ksztalt = ksztalt.point(lambda v: int(v * 0.55))
-    swiatlo = Image.new("RGBA", warstwa.size, ZIELEN + (0,))
-    swiatlo.putalpha(ksztalt)
-    return swiatlo
+def popiersie(render: Image.Image) -> Image.Image:
+    """Kwadratowy kadr na głowę i tors — do ikony, gdzie cała sylwetka byłaby zbyt drobna."""
+    bok = int(render.height * 0.52)
+    lewo = (render.width - bok) // 2
+    return render.crop((lewo, 0, lewo + bok, bok))
 
 
 def postac(render: Image.Image, wysokosc: int) -> Image.Image:
@@ -100,15 +112,15 @@ def klatki(plotno_tla: Image.Image, warstwy: list[Image.Image], pozycja,
     robi się dwa razy mniej — czyli mieści się w limicie 256 KiB.
     """
     obrazy, czasy = [], []
-    for warstwa in warstwy:
-        swiatlo = obrys(warstwa)
-        etapy = ([(rozjasniona(warstwa), MS_BLYSK)] if z_blyskiem else []) \
-            + [(warstwa, MS_SKIN + (0 if z_blyskiem else MS_BLYSK))]
+    for i, warstwa in enumerate(warstwy):
+        # Pierwsza klatka bez błysku — GIF ma się otwierać czystą sylwetką „bez skina",
+        # bo to ona jest miniaturką wszędzie tam, gdzie animacja jeszcze nie ruszyła.
+        blysk = z_blyskiem and i > 0
+        etapy = ([(rozjasniona(warstwa), MS_BLYSK)] if blysk else []) \
+            + [(warstwa, MS_SKIN + (0 if blysk else MS_BLYSK))]
         for wersja, ms in etapy:
             kadr = plotno_tla.copy()
-            gdzie = pozycja(wersja)
-            kadr.paste(swiatlo, gdzie, swiatlo)
-            kadr.paste(wersja, gdzie, wersja)
+            kadr.paste(wersja, pozycja(wersja), wersja)
             obrazy.append(kadr)
             czasy.append(ms)
     return obrazy, czasy
@@ -135,10 +147,12 @@ def logo(warstwy_zrodlowe: list[Image.Image]) -> None:
     # 384 px i 128 kolorów, bo ikona projektu na Modrincie musi zmieścić się w 256 KiB
     # (i tak wyświetla się w kilkudziesięciu pikselach).
     bok = 384
-    wysokosc = int(bok * 0.72)
-    warstwy = [postac(r, wysokosc) for r in warstwy_zrodlowe]
-    plotno = tlo(bok, bok, bok // 2)
-    pozycja = lambda w: ((bok - w.width) // 2, int(bok * 0.95) - w.height)
+    kadry = [popiersie(r) for r in warstwy_zrodlowe]
+    wysokosc = int(bok * 0.92)
+    warstwy = [postac(k, wysokosc) for k in kadry]
+    # Bez snopa i bez cienia: przy takim zbliżeniu popiersie samo wypełnia kadr.
+    plotno = tlo(bok, bok)
+    pozycja = lambda w: ((bok - w.width) // 2, int(bok * 0.06))
 
     obrazy, czasy = klatki(plotno, warstwy, pozycja, z_blyskiem=False)
     zapisz_gif(WYNIK / "logo.gif", obrazy, czasy, kolory=128)
@@ -151,7 +165,10 @@ def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
     wysokosc = int(wys * 0.80)
     warstwy = [postac(r, wysokosc) for r in warstwy_zrodlowe]
     lewa = int(szer * 0.23)
-    plotno = tlo(szer, wys, lewa)
+    stopy = int(wys * 0.94)
+    plotno = tlo(szer, wys,
+                 reflektor=(lewa, int(wys * 0.52), int(szer * 0.20), int(wys * 0.60), 0.42),
+                 cien_y=stopy)
 
     rysuj = ImageDraw.Draw(plotno)
     tytul = ImageFont.truetype(str(FONTY / "Poppins-ExtraBold.ttf"), 92)
@@ -169,7 +186,7 @@ def hero(warstwy_zrodlowe: list[Image.Image]) -> None:
     rysuj.rounded_rectangle((x, 390, x + w_tekstu + 52, 462), radius=14, fill=(31, 35, 41))
     rysuj.text((x + 26, 403), napis, font=mono, fill=ZIELEN)
 
-    pozycja = lambda w: (lewa - w.width // 2, int(wys * 0.94) - w.height)
+    pozycja = lambda w: (lewa - w.width // 2, stopy - w.height)
     obrazy, czasy = klatki(plotno, warstwy, pozycja)
     zapisz_gif(WYNIK / "hero.gif", obrazy, czasy)
 
